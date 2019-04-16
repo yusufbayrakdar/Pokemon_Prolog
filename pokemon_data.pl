@@ -255,22 +255,78 @@ best_pokemon_recursion([E|EnemyPokemonTeam],[B|BestPokemons]):-
     best_pokemon_recursion(EnemyPokemonTeam,BestPokemons).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-%%%%%%%%%%%%%%%%%%%%%%Case 10%%%%%%%%%%%%%%%%%%%%%%%
-%pokemon_types(List):-
-%    findall(X, ((pokemon_stats(X,Y, _, _, _),(member(grass,Y);member(fire,Y))),member(X,[bulbasaur,charmander])),List).
-pokemon_types([T], InitialPokemonList, PokemonList):-
-    findall(X, ((pokemon_stats(X,Y, _, _, _),(member(T,Y))),member(X,InitialPokemonList)),List),
-    union(PokemonList,List,PokemonList).
-pokemon_types([T|TypeList], InitialPokemonList, PokemonList):-
-    findall(X, ((pokemon_stats(X,Y, _, _, _),(member(T,Y))),member(X,InitialPokemonList)),List),
-    union(PokemonList,List,PokemonList),
-    pokemon_types(TypeList,InitialPokemonList,PokemonList).
+%%%%%%%%%%%%%%%%%%%%%%Case 11%%%%%%%%%%%%%%%%%%%%%%%
+pokemon_types(TypeList,InitialPokemonList,PokemonList):-
+    pokemon_type(TypeList,InitialPokemonList,PokeList),
+    destroy_inner_list(PokeList,PokemonList).
 
+destroy_inner_list([],[]).
+destroy_inner_list([H|Tail],List):-
+    append(H,Ys0,List),
+    destroy_inner_list(Tail,Ys0).
 
+pokemon_type([T], InitialPokemonList, [PokemonList]):-
+    findall(Pokemon, ((pokemon_stats(Pokemon,PokemonTypes, _, _, _),(member(T,PokemonTypes))),member(Pokemon,InitialPokemonList)),PokemonList).
+pokemon_type([T|TypeList], InitialPokemonList, [P|PokemonList]):-
+    findall(Pokemon, ((pokemon_stats(Pokemon,PokemonTypes, _, _, _),(member(T,PokemonTypes))),member(Pokemon,InitialPokemonList)),P),
+    pokemon_type(TypeList,InitialPokemonList,PokemonList).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-union([],[],[]).
-union(List1,[],List1).
-union(List1, [Head2|Tail2], [Head2|Output]):-
-    \+(member(Head2,List1)), union(List1,Tail2,Output).
-union(List1, [Head2|Tail2], Output):-
-    member(Head2,List1), union(List1,Tail2,Output).  
+%%%%%%%%%%%%%%%%%%%%%%Case 12%%%%%%%%%%%%%%%%%%%%%%%
+generate_team(LikedTypes,DislikedTypes,Criterion,Count,PokemonTeam):-
+    like(LikedTypes,Likedd),
+    destroy_inner_list(Likedd,Liked),
+    dislike(DislikedTypes,Dislikedd),
+    destroy_inner_list(Dislikedd,Disliked),
+    remove_list(Liked,Disliked,Removed),
+    switch(Criterion, [
+        h : predsort(health_criteria,Removed, Sorted),
+        a : predsort(attack_criteria,Removed, Sorted),
+        d : predsort(defense_criteria,Removed, Sorted)
+    ]),
+    split(Sorted,Count,PokemonTeam,_).
+
+remove_list([], _, []).
+remove_list([X|Tail], L2, Result):- member(X, L2), !, remove_list(Tail, L2, Result). 
+remove_list([X|Tail], L2, [X|Result]):- remove_list(Tail, L2, Result).
+
+like([L],[P]):-
+    findall([Pokemon,HealthPoint,Attack,Defense], (pokemon_stats(Pokemon, Types, HealthPoint, Attack, Defense),member(L,Types)),P).
+like([L|LikedTypes],[P|PokemonTeam]):-
+    findall([Pokemon,HealthPoint,Attack,Defense], (pokemon_stats(Pokemon, Types, HealthPoint, Attack, Defense),member(L,Types)),P),
+    like(LikedTypes,PokemonTeam).
+
+dislike([D],[P]):-
+    findall([Pokemon,HealthPoint,Attack,Defense], (pokemon_stats(Pokemon, Types, HealthPoint, Attack, Defense),member(D,Types)),P).
+dislike([D|DislikedTypes],[P|PokemonTeam]):-
+    findall([Pokemon,HealthPoint,Attack,Defense], (pokemon_stats(Pokemon, Types, HealthPoint, Attack, Defense),member(D,Types)),P),
+    dislike(DislikedTypes,PokemonTeam).
+
+health_criteria(R,[_,N1,_,_],[_,N2,_,_]) :- 
+    N1=\=N2, !,
+    compare(R,N2,N1).
+health_criteria(R,E1,E2) :-
+    compare(R,E1,E2).
+
+attack_criteria(R,[_,_,N1,_],[_,_,N2,_]) :- 
+    N1=\=N2, !,
+    compare(R,N2,N1).
+attack_criteria(R,E1,E2) :-
+    compare(R,E1,E2).
+
+defense_criteria(R,[_,_,_,N1],[_,_,_,N2]) :- 
+    N1=\=N2, !,
+    compare(R,N2,N1).
+defense_criteria(R,E1,E2) :-
+    compare(R,E1,E2).
+
+switch(X, [Val:Goal|Cases]) :-
+    ( X=Val ->
+        call(Goal)
+    ;
+        switch(X, Cases)
+    ).
+
+split(L,0,[],L).
+split([X|Xs],N,[X|Ys],Zs) :- N > 0, N1 is N - 1, split(Xs,N1,Ys,Zs).
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
