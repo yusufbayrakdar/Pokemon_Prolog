@@ -164,11 +164,11 @@ single_type_multiplier(AttackerType, DefenderType, Multiplier):-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%Case 4%%%%%%%%%%%%%%%%%%%%%%%%%
-type_multiplier(_,[], 0).
+type_multiplier(_,[], 1).
 type_multiplier(AttackerType,[H|T], Sum) :-
    type_multiplier(AttackerType,T, Rest),
    single_type_multiplier(AttackerType,H,Multiplier),
-   Sum is Multiplier + Rest.
+   Sum is Multiplier * Rest.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%Case 5%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -189,7 +189,7 @@ pokemon_attack(AttackerPokemon, AttackerPokemonLevel, DefenderPokemon, DefenderP
     pokemon_level_stats(AttackerPokemonLevel,AttackerPokemon,_,AttackerPokemonAttack,_),
     pokemon_level_stats(DefenderPokemonLevel,DefenderPokemon,_,_,DefenderPokemonDefense),
     pokemon_type_multiplier(AttackerPokemon,DefenderPokemon,TypeMultiplier),
-    Damage is (0.5 * AttackerPokemonLevel * (AttackerPokemonAttack / DefenderPokemonDefense) * TypeMultiplier) + 1.
+    Damage is (0.5 * AttackerPokemonLevel * (AttackerPokemonAttack / DefenderPokemonDefense) * TypeMultiplier + 1).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%Case 7%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -245,14 +245,14 @@ list_max([X|Xs], R):- list_max(Xs, X, R). %start
 
 %%%%%%%%%%%%%%%%%%%%%%Case 10%%%%%%%%%%%%%%%%%%%%%%%
 best_pokemon_team(OpponentTrainer, PokemonTeam):-
-    pokemon_trainer(OpponentTrainer, EnemyPokemonTeam, _),
-    best_pokemon_recursion(EnemyPokemonTeam,PokemonTeam).
+    pokemon_trainer(OpponentTrainer, EnemyPokemonTeam, PokemonLevels),
+    best_pokemon_recursion(EnemyPokemonTeam,PokemonTeam,PokemonLevels).
 
-best_pokemon_recursion([E],[B]):-
-    best_pokemon(E,42,_,B).
-best_pokemon_recursion([E|EnemyPokemonTeam],[B|BestPokemons]):-
-    best_pokemon(E,42,_,B),
-    best_pokemon_recursion(EnemyPokemonTeam,BestPokemons).
+best_pokemon_recursion([E],[B],[PL]):-
+    best_pokemon(E,PL,_,B).
+best_pokemon_recursion([E|EnemyPokemonTeam],[B|BestPokemons],[PL|PokemonLevels]):-
+    best_pokemon(E,PL,_,B),
+    best_pokemon_recursion(EnemyPokemonTeam,BestPokemons,PokemonLevels).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%Case 11%%%%%%%%%%%%%%%%%%%%%%%
@@ -273,7 +273,7 @@ pokemon_type([T|TypeList], InitialPokemonList, [P|PokemonList]):-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%Case 12%%%%%%%%%%%%%%%%%%%%%%%
-generate_team(LikedTypes,DislikedTypes,Criterion,Count,PokemonTeam):-
+generate_pokemon_team(LikedTypes,DislikedTypes,Criterion,Count,PokemonTeam):-
     like(LikedTypes,Likedd),
     destroy_inner_list(Likedd,Liked),
     dislike(DislikedTypes,Dislikedd),
