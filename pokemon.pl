@@ -45,7 +45,7 @@ type_multiplier(AttackerType,[H|T], EffectOfMultipliers) :-                     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%Case 5%%%%%%%%%%%%%%%%%%%%%%%%%
-type_multiplier_complex([],_, 0).                                                                   %In case of empthy list return 0 value which is appropriate because I choose max element in next instruction.
+type_multiplier_complex([],_, 0).                                                                   %In case of empty list return 0 value which is appropriate because I choose max element in next instruction.
 type_multiplier_complex([H|T],DefenderTypes, MultiplierWithMaxEffect) :-                            %This function takes AttackerType list and for each of them calls type_multiplier function.It compares their multipliers choosing max multiplier.
    type_multiplier(H,DefenderTypes,Multiplier),                                                     %Call type_multiplier function for header of the AttackerType list.
    type_multiplier_complex(T,DefenderTypes,Rest),                                                   %Go to recursive with rest of the AttackerType list (without its first element).
@@ -90,10 +90,10 @@ brute_force_evolution([Pokemon|Pokemons], [Level|Levels], [EvolvedPokemon|T]):- 
 
 match([Team1],[Level1],PokemonTrainer1,[Team2],[Level2],PokemonTrainer2,[Result]):-                                                         %If lists have single function find the result and get rid of the recursion.
     pokemon_fight(Team1,Level1,Team2,Level2,Hp1,Hp2,_),
-    (Hp1>Hp2->Result = PokemonTrainer1;Result = PokemonTrainer2).
+    (Hp1<Hp2->Result = PokemonTrainer2;Result = PokemonTrainer1).                                                                           %This calculation compare final health (Hp1 and Hp2) after pokemon fight and if Hp2 is greater than Hp1 the declare second team name as winner otherwise declare first team name. 
 match([Team1|Team1s],[Level1|Level1s],PokemonTrainer1,[Team2|Team2s],[Level2|Level2s],PokemonTrainer2,[Result|Results]):-                   %This function matches the teams with pokemon_fight function and recursive.It matches pokemons according to its team order (first to first, second to second,...) in each recursive call.
     pokemon_fight(Team1,Level1,Team2,Level2,Hp1,Hp2,_),                                                                                     %Match pokemons with same order and find the final health values.
-    (Hp1>Hp2->Result = PokemonTrainer1;Result = PokemonTrainer2),                                                                           %Decide winner pokemon examining final health values.Assing result the winner trainer in each match.
+    (Hp1<Hp2->Result = PokemonTrainer2;Result = PokemonTrainer1),                                                                           %Decide winner pokemon examining final health values.Assing result the winner trainer in each match.
     match(Team1s,Level1s,PokemonTrainer1,Team2s,Level2s,PokemonTrainer2,Results).                                                           %Repeat these instructions until lists have single elements.
 
 pokemon_tournament(PokemonTrainer1, PokemonTrainer2, WinnerTrainerList):-                                                                   %This function takes trainer names and gives winner list prepared according to each match.
@@ -119,7 +119,8 @@ list_max([X1|Xs], Max):- list_max(X1, Xs, Max).                                 
 %%%%%%%%%%%%%%%%%%%%%%Case 10%%%%%%%%%%%%%%%%%%%%%%%
 best_pokemon_team(OpponentTrainer, PokemonTeam):-                                                           %This function creates a team against pokemons of the OpponentTrainer.
     pokemon_trainer(OpponentTrainer, EnemyPokemonTeam, PokemonLevels),                                      %Get the pokemons and levels of the OpponentTrainer.
-    best_pokemon_recursion(EnemyPokemonTeam,PokemonLevels,PokemonTeam).                                     %Call the best_pokemon_recursion function with +EnemyPokemonTeam,+PokemonLevels and -PokemonTeam parameters.
+    brute_force_evolution(EnemyPokemonTeam,PokemonLevels,EvolvedEnemyPokemonTeam),                          %Force the pokemons before trying to find the best pokemon team against our enemy pokemon team.
+    best_pokemon_recursion(EvolvedEnemyPokemonTeam,PokemonLevels,PokemonTeam).                              %Call the best_pokemon_recursion function with +EnemyPokemonTeam,+PokemonLevels and -PokemonTeam parameters.
 
 best_pokemon_recursion([E],[PL],[B]):-                                                                      %If lists have a single elements get rid of the recursion.
     best_pokemon(E,PL,_,B).
@@ -131,18 +132,27 @@ best_pokemon_recursion([E|EnemyPokemonTeam],[PL|PokemonLevels],[B|BestPokemons])
 %%%%%%%%%%%%%%%%%%%%%%Case 11%%%%%%%%%%%%%%%%%%%%%%%                                                        %In this case I find all pokemons that have at least one type which is a member of the TypeList
 pokemon_types(TypeList,GivenPokemonList,PokemonList):-                                                      %This function is used to just combine following two functions.
     pokemon_type(TypeList,GivenPokemonList,PokeList),                                                       %You can think pokemon_type function as a main function in this case because it is the function which take over the actual duties.I will explain it later.
-    destroy_inner_list(PokeList,PokemonList).                                                               %I used this function to convert list of list to list.
+    destroy_inner_list(PokeList,UnuniquePokemonList),                                                               %I used this function to convert list of list to list.
+    remove_duplicates(UnuniquePokemonList,PokemonList).
 
-destroy_inner_list([],[]).                                                                                  %If emptyh list then get rid of recursion and quit.Let me give an example: destroy_inner_list([[1,2],[3,4]],List).=>List is append([1,2],Rest)=>destroy_inner_list([[3,4]],Rest)=>Rest is append([3,4],AnotherRest)=>destroy_inner_list([],AnotherRest)=>AnotherRest is append([],[]).=>List is append([1,2],[3,4]).=>List=[1,2,3,4].
+destroy_inner_list([],[]).                                                                                  %If empty list then get rid of recursion and quit.Let me give an example: destroy_inner_list([[1,2],[3,4]],List).=>List is append([1,2],Rest)=>destroy_inner_list([[3,4]],Rest)=>Rest is append([3,4],AnotherRest)=>destroy_inner_list([],AnotherRest)=>AnotherRest is append([],[]).=>List is append([1,2],[3,4]).=>List=[1,2,3,4].
 destroy_inner_list([H|Tail],List):-                                                                         %I defined and used this function convert listf of list to list.For example destroy_inner_list([[1,2,3],[4,5],X]) gives me X = [1,2,3,4,5].
-    append(H,Rest,List),                                                                                    %In this instruction I append header element and an unknown variable (Rest) obtaining List.But following instruction I call recursion with that unknown variable and find it and so on.It goes until it finds empthy list.
+    append(H,Rest,List),                                                                                    %In this instruction I append header element and an unknown variable (Rest) obtaining List.But following instruction I call recursion with that unknown variable and find it and so on.It goes until it finds empty list.
     destroy_inner_list(Tail,Rest).                                                                          %Call recursion with our unknown variable (Rest) and Tail.And when it finds the last unknown variable, then assing these unknown variables to values which we found later.
 
 pokemon_type([SingleType], GivenPokemonList, [SinglePokemonElement]):-                                                                                                    %If lists have single element then get rid of recursion and do the same instruction.
     findall(Pokemon, ((pokemon_stats(Pokemon,PokemonTypes, _, _, _),(member(SingleType,PokemonTypes))),member(Pokemon,GivenPokemonList)),SinglePokemonElement).
 pokemon_type([T|TypeList], GivenPokemonList, [P|PokemonList]):-                                                                                                           %This function using findall with some queries.I place some constraints in findall,So it accepts every pokemon who is suitable these constraints.Example output:"pokemon_type([grass, flying, ground], [bulbasaur, charmander, charizard, gyarados, pikachu] , PokemonList)." gives me "PokemonList = [[bulbasaur], [charizard, gyarados], []]".
     findall(Pokemon, ((pokemon_stats(Pokemon,PokemonTypes, _, _, _),(member(T,PokemonTypes))),member(Pokemon,GivenPokemonList)),P),                                       %Firstly, I get pokemon names (Pokemon) and their type list (PokemonTypes).I get the pokemons if their types include header type of the given TypeList and this pokemon is in the given pokemon list (GivenPokemonList).After getting pokemons which is suitable these constraints, list them with findall and assing this list to result list (PokemonList).
-    pokemon_type(TypeList,GivenPokemonList,PokemonList).                                                                                                                  %Go to recursion with tail of the TypeList until TypeList has single element.This function give list of list so I did not make this function main function (pokemon_types).Because its output require destroy_inner_list function to convert its output (list of list) to list. 
+    pokemon_type(TypeList,GivenPokemonList,PokemonList).   
+
+remove_duplicates([],[]).                                                                           %In case of empty list stop recursion.
+remove_duplicates([H | T], List) :-                                                                 %This function is for remove dublicates and make given list unique.For example remove_duplicates([1,2,3,1,4],List) gives List = [2,3,1,4].This function does nothing and continue with next element of the given list if checking element is dublicate element.
+     member(H, T),!,                                                                                %I used cut in here after checking dublicate element for the header of the list so that cut the unnecessary outputs.
+     remove_duplicates( T, List).                                                                   %Go to recursion without header of the given list.Repeat it until it goes to empty list.
+remove_duplicates([H | T], [H|T1]) :-                                                               %If header of the list is not dublicate element then assing it to the header of the result list.
+      \+member(H, T),                                                                               %Check header of the given list is not dublicate.
+      remove_duplicates( T, T1).                                                                    %Go to recursion with rest of the given and result lists.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %%%%%%%%%%%%%%%%%%%%%%Case 12%%%%%%%%%%%%%%%%%%%%%%%
@@ -159,13 +169,13 @@ generate_pokemon_team(LikedTypes,DislikedTypes,Criterion,Count,PokemonTeam):-   
     ]),                                                                                             %health_criteria,attack_criteria and defense_criteria are defined next instructions so I will explain these later.
     suffix(Sorted,Count,PokemonTeam).                                                               %Finally, I get the suffix of the Sorted list according to Count and return the PokemonTeam.
 
-choose([L],[P]):-                                                                                                                           
+choose([L],[P]):-                                                                                                                                %If the remain of the list is single element then stop recursion and do same process for last time.                
     findall([Pokemon,HealthPoint,Attack,Defense], (pokemon_stats(Pokemon, Types, HealthPoint, Attack, Defense),member(L,Types)),P).
 choose([L|WantedTypes],[P|PokemonTeam]):-                                                                                                        %This function select the pokemons who has the type which is member of the given WantedTypes.
     findall([Pokemon,HealthPoint,Attack,Defense], (pokemon_stats(Pokemon, Types, HealthPoint, Attack, Defense),member(L,Types)),P),              %This is a query instruction.It lists each pokemon that has the type which is a member of the WantedTypes.
     choose(WantedTypes,PokemonTeam).                                                                                                             %After check header type of the WantedTypes list call recursion with remaining list.Recursion.
 
-remove_list([], _, []).                                                                             %Stop in case of empthy list.This function find the difference between two list based on first list.I mean that let assume L1=[1,2,3],L2=[2,3,4] then when we call remove(L1,L2,X), it gives us X = [1].
+remove_list([], _, []).                                                                             %Stop in case of empty list.This function find the difference between two list based on first list.I mean that let assume L1=[1,2,3],L2=[2,3,4] then when we call remove(L1,L2,X), it gives us X = [1].
 remove_list([X|Tail], L2, Result):- member(X, L2), !, remove_list(Tail, L2, Result).                %If header of the first list is member of the second list, then remove it
 remove_list([X|Tail], L2, [X|Result]):- remove_list(Tail, L2, Result).                              %In this instruction if first elements of first list and result list then do nothing and continue with next element.
 
@@ -191,7 +201,7 @@ defense_criteria(R,E1,E2) :-
     compare(R,E1,E2).
 
 suffix(_,0,[]).                                                                 %If N is 0 then exit.
-suffix([X|Xs],N,[X|Suffix]) :-                                                  %Take first N elements of the given list with recursive.Each function call decrease N variable, if N is 0 get rid of the recursive and return the suffix list.
+suffix([X|Xs],N,[X|Suffix]) :-                                                  %Take first N elements of the given list with recursive.Each function call decrease N variable to N-1, if N is 0 get rid of the recursive and return the suffix list.
     N > 0, N1 is N - 1,
     suffix(Xs,N1,Suffix).
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

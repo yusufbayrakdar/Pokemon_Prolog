@@ -127,6 +127,7 @@ type_chart_attack(fairy, [1.0, 0.5, 1.0, 1.0, 1.0, 1.0, 2.0, 0.5, 1.0, 1.0, 1.0,
 
 % pokemon_trainer(PokemonTrainer, PokemonTeam, PokemonLevels
 pokemon_trainer(ash, [pikachu, ivysaur, charmeleon, squirtle], [45, 15, 28, 50]).
+pokemon_trainer(ash_clone, [pikachu, ivysaur, charmeleon, squirtle], [45, 15, 28, 50]).
 pokemon_trainer(misty, [psyduck, staryu, starmie, seadra], [10, 15, 48, 45]).
 pokemon_trainer(brock, [onix, geodude, golbat, machop], [18, 33, 42, 33]).
 pokemon_trainer(team_rocket, [meowth, ekans, gyarados, weezing], [15, 30, 29, 35]).
